@@ -1,6 +1,8 @@
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
-import  sys, pyodbc, _thread
+from PyQt4.QtWebKit import *
+import sys, pyodbc, time
+from threading import Thread
 
 import urllib.request
 
@@ -12,11 +14,14 @@ class Downloader(QDialog):
         layout = QVBoxLayout()
 
         self.url = QLineEdit()
-        self.url.setReadOnly(True)
+        #self.url.setReadOnly(True)
         self.save_location = QLineEdit()
         self.progress = QProgressBar()
         download = QPushButton("Download")
         browse = QPushButton("Browse")
+        self.webview = QWebView()
+        self.webpage = QWebPage()
+        self.webview.setPage(self.webpage)
 
         self.url.setPlaceholderText("URL")
         self.save_location.setPlaceholderText("File save location")
@@ -25,6 +30,7 @@ class Downloader(QDialog):
         self.progress.setAlignment(Qt.AlignHCenter)
 
         layout.addWidget(self.url)
+        layout.addWidget(self.webview)
         layout.addWidget(self.save_location)
         layout.addWidget(browse)
         layout.addWidget(self.progress)
@@ -35,7 +41,7 @@ class Downloader(QDialog):
         self.setWindowTitle("PyDownloader")
         self.setFocus()
 
-        download.clicked.connect(self.download)
+        download.clicked.connect(self.downloadthread.start)
         browse.clicked.connect(self.browse_file)
 
     def browse_file(self):
@@ -51,43 +57,44 @@ class Downloader(QDialog):
                               'Trusted_Connection=yes;')
 
         cursor = conn.cursor()
-        cursor.execute("SELECT ManufacturerItemNumber, ItemImageURL FROM Tbl_scansource WHERE Manufacturer='Datalogic' ")
+        cursor.execute("SELECT TOP (10) ManufacturerItemNumber, ItemImageURL FROM Tbl_scansource WHERE Manufacturer='Datalogic' ")
         self.updater = conn.cursor()
 
         for row in cursor:
-            print(row[1])
             url = row[1]
             item = row[0]
+
             #_thread.start_new_thread(self.download_thread, (row[1], row[0]))
-            save_location = self.save_location.text() + "\\" + item + ".jpg"
-            print(save_location)
-            try:
-                urllib.request.urlretrieve(url, save_location, self.report)
-                #self.updater.execute("UPDATE Tbl_scansource SET FileDownloaded=1 WHERE ManufacturerItemNumber = ?",
-                #                     item)
-            except Exception:
-                print("The download failed for item " + item)
-                #self.updater.execute(
-                #    "UPDATE Tbl_scansource SET FileDownloaded=0, FileDownloadError=?  WHERE ManufacturerItemNumber = ?",
-                #    "The download failed for item " + item, item)
-                # QMessageBox.warning(self, "Warning", "The download failed")
+            if url != "":
+                self.url.setText(url)
 
-    def download_thread(self, url, item):
-        self.url.setText(url)
-        save_location = self.save_location.text() + "\\" + item + ".jpg"
-        print(save_location)
-        try:
-            urllib.request.urlretrieve(url, save_location, self.report)
-            self.updater.execute("UPDATE Tbl_scansource SET FileDownloaded=1 WHERE ManufacturerItemNumber = ?",item)
-        except Exception:
-            print("The download failed for item " + item)
-            self.updater.execute("UPDATE Tbl_scansource SET FileDownloaded=0, FileDownloadError=?  WHERE ManufacturerItemNumber = ?","The download failed for item " + item , item)
-            #QMessageBox.warning(self, "Warning", "The download failed")
 
-        QMessageBox.information(self, "Information", "All downloads are completed")
+            #save_location = self.save_location.text() + "\\" + item + ".jpg"
+            #print(save_location)
+            #try:
+            #    urllib.request.urlretrieve(url, save_location, self.report)
+            #    #self.updater.execute("UPDATE Tbl_scansource SET FileDownloaded=1 WHERE ManufacturerItemNumber = ?",
+            #    #                     item)
+            #except Exception:
+            #    print("The download failed for item " + item)
+            #    #self.updater.execute(
+            #    #    "UPDATE Tbl_scansource SET FileDownloaded=0, FileDownloadError=?  WHERE ManufacturerItemNumber = ?",
+            #    #    "The download failed for item " + item, item)
+            #    # QMessageBox.warning(self, "Warning", "The download failed")
         self.progress.setValue(0)
         self.url.setText("")
         self.save_location.setText("")
+        QMessageBox.information(self, "Information", "All downloads are completed")
+
+    def download_thread(self, url, item):
+        save_location = self.save_location.text() + "\\" + item + ".jpg"
+        try:
+            urllib.request.urlretrieve(url, save_location, self.report)
+            #self.updater.execute("UPDATE Tbl_scansource SET FileDownloaded=1 WHERE ManufacturerItemNumber = ?",item)
+        except Exception:
+            print("The download failed for item " + item)
+            #self.updater.execute("UPDATE Tbl_scansource SET FileDownloaded=0, FileDownloadError=?  WHERE ManufacturerItemNumber = ?","The download failed for item " + item , item)
+            #QMessageBox.warning(self, "Warning", "The download failed")
 
     def report(self, blocknum, blocksize, totalsize):
         readsofar = blocknum * blocksize
