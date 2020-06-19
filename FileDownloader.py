@@ -63,7 +63,7 @@ class Downloader(QDialog):
                               'Trusted_Connection=yes;'
                               'MARS_Connection=Yes;')
         cursor = conn.cursor()
-        cursor.execute("SELECT [dbo].[Tbl_Scansource].ManufacturerItemNumber, [dbo].[Tbl_Scansource].[ItemImageURL] FROM dbo.Tbl_Zebra LEFT OUTER JOIN dbo.Tbl_Scansource ON dbo.Tbl_Zebra.[product id] = [dbo].[Tbl_Scansource].[ManufacturerItemNumber] WHERE Tbl_Zebra.Picture = ''")
+        cursor.execute("SELECT [dbo].[Tbl_Scansource].ManufacturerItemNumber, [dbo].[Tbl_Scansource].[ItemImageURL] FROM dbo.Tbl_Datalogic LEFT OUTER JOIN dbo.Tbl_Scansource ON dbo.Tbl_Datalogic.[product id] = [dbo].[Tbl_Scansource].[ManufacturerItemNumber] WHERE Tbl_Datalogic.Picture = ''")
         updater = conn2.cursor()
         FailedImages = []
         for row in cursor:
@@ -80,7 +80,7 @@ class Downloader(QDialog):
                     urllib.request.urlretrieve(url, save_location_path, self.report)
                     self.progress.setValue(0)
                     self.url.setText("")
-                    updater.execute("UPDATE [dbo].[Tbl_Zebra] SET [Picture] = ? WHERE [product id] = ?",
+                    updater.execute("UPDATE [dbo].[Tbl_Datalogic] SET [Picture] = ? WHERE [product id] = ?",
                                     (item + ".jpg"), item)
                     updater.commit()
 
@@ -92,7 +92,7 @@ class Downloader(QDialog):
                     #    "The download failed for item " + item, item)
                     #QMessageBox.warning(self, "Warning", "The download failed")
 
-        cursor.execute("SELECT [dbo].[Tbl_Jarltech].ORIGINAL_ART_NO, [dbo].[Tbl_Jarltech].[PICTURE] FROM dbo.Tbl_Zebra LEFT OUTER JOIN dbo.Tbl_Jarltech ON dbo.Tbl_Zebra.[product id] = [dbo].[Tbl_Jarltech].[ORIGINAL_ART_NO] WHERE Tbl_Zebra.Picture = ''")
+        cursor.execute("SELECT [dbo].[Tbl_Jarltech].ORIGINAL_ART_NO, [dbo].[Tbl_Jarltech].[PICTURE] FROM dbo.Tbl_Datalogic LEFT OUTER JOIN dbo.Tbl_Jarltech ON dbo.Tbl_Datalogic.[product id] = [dbo].[Tbl_Jarltech].[ORIGINAL_ART_NO] WHERE Tbl_Datalogic.Picture = ''")
         for row in cursor:
 
             url = row[1]
@@ -107,7 +107,7 @@ class Downloader(QDialog):
                     urllib.request.urlretrieve(url, save_location_path, self.report)
                     self.progress.setValue(0)
                     self.url.setText("")
-                    updater.execute("UPDATE [dbo].[Tbl_Zebra] SET [Picture] = ? WHERE [product id] = ?",
+                    updater.execute("UPDATE [dbo].[Tbl_Datalogic] SET [Picture] = ? WHERE [product id] = ?",
                                     (item + ".jpg"), item)
                     updater.commit()
 
